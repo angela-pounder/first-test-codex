@@ -3,72 +3,74 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Instagram Engagement Toolkit</title>
+  <title>Instagram Engagement Toolkit • Clydeside Social</title>
   <style>
-    body {
-      font-family: "Arial Rounded MT Bold", Arial, sans-serif;
-      background: #a9dde8; /* blue background */
-      color: #222;
-      margin: 0;
-      padding: 24px;
-      display: flex;
-      justify-content: center;
+    :root{
+      --pink:#ff667f;
+      --blue:#a9dde8;
+      --text:#222;
+      --card:#fff;
+      --radius:16px;
+      --shadow:0 10px 24px rgba(0,0,0,.08);
     }
-    .wrap {
-      max-width: 720px;
-      width: 100%;
+    *{box-sizing:border-box}
+    body{
+      font-family:"Arial Rounded MT Bold", Arial, sans-serif;
+      background:var(--blue);
+      color:var(--text);
+      margin:0; padding:24px;
+      display:flex; justify-content:center;
     }
-    .card {
-      background: #fff;
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
-      margin-bottom: 20px;
+    .wrap{max-width:720px; width:100%}
+    .logo{
+      max-width:180px;
+      margin:0 auto 20px;
+      display:block;
     }
-    h1 {
-      font-size: 1.6rem;
-      margin: 0 0 12px;
-      color: #ff667f;
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:24px;
+      box-shadow:var(--shadow);
+      margin-bottom:20px;
     }
-    label {
-      display: block;
-      margin: 0.75rem 0 0.25rem;
-      font-weight: bold;
+    h1{font-size:1.6rem; margin:0 0 12px; color:var(--pink)}
+    h2{font-size:1.2rem; margin:0 0 8px}
+    p{margin:.5rem 0}
+    label{display:block; margin:.75rem 0 .25rem; font-weight:bold}
+    input{
+      width:100%; padding:.7rem .9rem;
+      border:1px solid #ddd; border-radius:16px;
     }
-    input {
-      width: 100%;
-      padding: 0.7rem 0.9rem;
-      border: 1px solid #ddd;
-      border-radius: 16px;
+    button{
+      margin-top:1rem; padding:.8rem 1.1rem;
+      border:0; border-radius:999px; cursor:pointer;
+      background:linear-gradient(135deg,var(--pink),var(--blue));
+      color:#fff; font-weight:bold; font-size:1rem;
+      box-shadow:0 6px 14px rgba(0,0,0,.12);
     }
-    button {
-      margin-top: 1rem;
-      padding: 0.8rem 1.1rem;
-      border: none;
-      border-radius: 999px;
-      cursor: pointer;
-      background: linear-gradient(135deg,#ff667f,#a9dde8);
-      color: #fff;
-      font-weight: bold;
-      font-size: 1rem;
-    }
-    #result {
-      margin-top: 1rem;
-      font-weight: bold;
-      color: #ff667f;
-    }
-    footer {
-      margin-top: 12px;
-      font-size: 0.85rem;
-      opacity: 0.7;
-      text-align: center;
-    }
+    #result, #snapshotResult{margin-top:1rem; font-weight:bold; color:var(--pink); white-space:pre-line}
+    .muted{font-size:.95rem; opacity:.8; margin-top:.25rem}
+    footer{margin-top:12px; font-size:.85rem; opacity:.7; text-align:center}
+    .intro{font-size:1rem}
   </style>
 </head>
 <body>
   <div class="wrap">
+    <!-- LOGO -->
+    <img src="https://raw.githubusercontent.com/angela-pounder/first-test-codex/main/Clydeside%20Social%20-%20Logo%20REFRESH_Inline%20-%20B%26P%20-%20White%20DS%20-%20NO%20BG.png" alt="Clydeside Social logo" class="logo">
+
     <div class="card">
-      <h1>Instagram Engagement Rate Calculator</h1>
+      <h1>Instagram Engagement Toolkit</h1>
+      <p class="intro">
+        Pop in your numbers for a single post, then get a quick monthly snapshot.
+        I’ll give you friendly tips based on your results. Nothing is saved—your data stays in your browser.
+      </p>
+    </div>
+
+    <!-- Post-level calculator -->
+    <div class="card">
+      <h2>Post Engagement Rate</h2>
       <label>Followers:</label>
       <input type="number" id="followers" min="0" />
 
@@ -79,10 +81,13 @@
       <input type="number" id="comments" min="0" />
 
       <button id="calc-btn">Calculate</button>
-      <div id="result"></div>
+      <div id="result" aria-live="polite"></div>
+      <p id="resultTip" class="muted"></p>
     </div>
-        <div class="card">
-      <h1>Monthly Snapshot</h1>
+
+    <!-- Monthly snapshot -->
+    <div class="card">
+      <h2>Monthly Snapshot</h2>
       <label>Followers at start of month:</label>
       <input type="number" id="followersStart" min="0" />
 
@@ -93,43 +98,83 @@
       <input type="number" id="posts" min="0" />
 
       <button id="snapshot-btn">Calculate Snapshot</button>
-      <div id="snapshotResult"></div>
+      <div id="snapshotResult" aria-live="polite"></div>
+      <p id="snapshotTip" class="muted"></p>
     </div>
-
 
     <footer>© Clydeside Social • Built with Codex</footer>
   </div>
 
   <script>
-    document.getElementById('calc-btn').addEventListener('click', function() {
+    // POST-LEVEL: engagement with tips
+    document.getElementById('calc-btn').addEventListener('click', function () {
       const followers = parseFloat(document.getElementById('followers').value) || 0;
       const likes = parseFloat(document.getElementById('likes').value) || 0;
       const comments = parseFloat(document.getElementById('comments').value) || 0;
 
+      const result = document.getElementById('result');
+      const tip = document.getElementById('resultTip');
+
       if (followers === 0) {
-        document.getElementById('result').innerText = "Followers cannot be zero.";
+        result.innerText = "Followers cannot be zero.";
+        tip.innerText = "";
         return;
       }
 
-      const engagement = ((likes + comments) / followers) * 100;
-      document.getElementById('result').innerText = "Engagement Rate: " + engagement.toFixed(2) + "%";
+      const er = ((likes + comments) / followers) * 100;
+      result.innerText = "Engagement Rate: " + er.toFixed(2) + "%";
+
+      let msg = "";
+      if (er < 1) {
+        msg = "On the low side. Try a question in the first line and a clearer CTA.";
+      } else if (er < 3) {
+        msg = "Around typical (1–3%). A carousel or a ‘save this’ tip could nudge it up.";
+      } else if (er < 6) {
+        msg = "Strong result. Repeat the format/topic next week.";
+      } else {
+        msg = "Excellent. Bottle this—reuse the hook and posting time.";
+      }
+      tip.innerText = msg;
     });
-    document.getElementById('snapshot-btn').addEventListener('click', function() {
+
+    // MONTHLY: growth + consistency with tips
+    document.getElementById('snapshot-btn').addEventListener('click', function () {
       const start = parseFloat(document.getElementById('followersStart').value) || 0;
       const end = parseFloat(document.getElementById('followersEnd').value) || 0;
       const posts = parseFloat(document.getElementById('posts').value) || 0;
 
+      const out = document.getElementById('snapshotResult');
+      const tip = document.getElementById('snapshotTip');
+
       if (start === 0) {
-        document.getElementById('snapshotResult').innerText = "Followers start cannot be zero.";
+        out.innerText = "Followers start cannot be zero.";
+        tip.innerText = "";
         return;
       }
 
       const growth = ((end - start) / start) * 100;
-      const consistency = (posts / 4.3).toFixed(1);
+      const perWeek = posts / 4.3;
 
-      document.getElementById('snapshotResult').innerText = 
+      out.innerText =
         "Growth Rate: " + growth.toFixed(2) + "%\n" +
-        "Consistency: " + consistency + " posts per week";
+        "Consistency: " + perWeek.toFixed(1) + " posts per week";
+
+      let notes = [];
+
+      if (growth < 0) notes.push("Followers dipped — re-engage warm audiences and share more saves-worthy content.");
+      else if (growth < 1) notes.push("Flat growth — try one extra weekly post or a collab.");
+      else if (growth < 3) notes.push("Nice steady growth.");
+      else notes.push("Strong growth — keep this pace and topics.");
+
+      if (perWeek < 2) {
+        notes.push("Consistency is low. Aim for ~3 posts/week.");
+      } else if (perWeek < 3) {
+        notes.push("Nearly there — try scheduling one more post.");
+      } else {
+        notes.push("Consistency on point — nice work. While you’re here, schedule next month now (carousels + a Reel each week).");
+      }
+
+      tip.innerText = notes.join(" ");
     });
   </script>
 </body>
