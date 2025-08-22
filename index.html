@@ -81,6 +81,21 @@
       <button id="calc-btn">Calculate</button>
       <div id="result"></div>
     </div>
+        <div class="card">
+      <h1>Monthly Snapshot</h1>
+      <label>Followers at start of month:</label>
+      <input type="number" id="followersStart" min="0" />
+
+      <label>Followers at end of month:</label>
+      <input type="number" id="followersEnd" min="0" />
+
+      <label>Posts published this month:</label>
+      <input type="number" id="posts" min="0" />
+
+      <button id="snapshot-btn">Calculate Snapshot</button>
+      <div id="snapshotResult"></div>
+    </div>
+
 
     <footer>© Clydeside Social • Built with Codex</footer>
   </div>
@@ -98,6 +113,23 @@
 
       const engagement = ((likes + comments) / followers) * 100;
       document.getElementById('result').innerText = "Engagement Rate: " + engagement.toFixed(2) + "%";
+    });
+    document.getElementById('snapshot-btn').addEventListener('click', function() {
+      const start = parseFloat(document.getElementById('followersStart').value) || 0;
+      const end = parseFloat(document.getElementById('followersEnd').value) || 0;
+      const posts = parseFloat(document.getElementById('posts').value) || 0;
+
+      if (start === 0) {
+        document.getElementById('snapshotResult').innerText = "Followers start cannot be zero.";
+        return;
+      }
+
+      const growth = ((end - start) / start) * 100;
+      const consistency = (posts / 4.3).toFixed(1);
+
+      document.getElementById('snapshotResult').innerText = 
+        "Growth Rate: " + growth.toFixed(2) + "%\n" +
+        "Consistency: " + consistency + " posts per week";
     });
   </script>
 </body>
