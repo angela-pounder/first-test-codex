@@ -4,24 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Clydeside Social - Instagram Calculator</title>
-
   <style>
     body {
       font-family: "Arial Rounded MT Bold", Arial, sans-serif;
-      background-color: #fdfdfd;
+      background-color: #a9dde8; /* brand blue */
       color: #333;
       text-align: center;
       padding: 20px;
     }
 
-    img.logo {
-      max-width: 180px;
-      margin-bottom: 10px;
-    }
-
     h1 {
       color: #ff6680; /* brand pink */
-      margin-bottom: 25px;
+      margin-bottom: 20px;
     }
 
     .section {
@@ -32,12 +26,7 @@
       margin: 20px auto;
       max-width: 500px;
       box-shadow: 0px 4px 8px rgba(0,0,0,0.05);
-      text-align: left; /* makes headings align left */
-    }
-
-    h2 {
-      color: #333;
-      margin-top: 0;
+      text-align: left; /* left align titles + labels */
     }
 
     label {
@@ -49,40 +38,38 @@
     input {
       width: 100%;
       padding: 8px;
+      margin-bottom: 10px;
       border: 1px solid #ddd;
       border-radius: 8px;
     }
 
     button {
-      margin-top: 12px;
-      padding: 10px 15px;
+      width: 100%;
+      padding: 10px;
+      background: linear-gradient(135deg, #ff6680, #6680ff);
       border: none;
       border-radius: 8px;
-      cursor: pointer;
-      background: linear-gradient(135deg, #ff6680, #66a6ff);
       color: #fff;
       font-weight: bold;
-      font-size: 1rem;
-      display: block;
-      width: 100%;
+      cursor: pointer;
     }
 
     button:hover {
       opacity: 0.9;
     }
 
-    #result, #snapshotResult {
-      margin-top: 10px;
+    .result {
+      margin-top: 15px;
       font-weight: bold;
       color: #ff6680;
       white-space: pre-line;
     }
 
     /* Toast notification */
-    #toast {
+    .toast {
       visibility: hidden;
-      min-width: 200px;
-      margin-left: -100px;
+      min-width: 250px;
+      margin-left: -125px;
       background-color: #333;
       color: #fff;
       text-align: center;
@@ -94,18 +81,28 @@
       bottom: 30px;
       font-size: 14px;
     }
-    #toast.show {
+
+    .toast.show {
       visibility: visible;
       animation: fadein 0.5s, fadeout 0.5s 2.5s;
     }
-    @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
-    @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+    @keyframes fadein {
+      from { bottom: 0; opacity: 0; }
+      to { bottom: 30px; opacity: 1; }
+    }
+
+    @keyframes fadeout {
+      from { bottom: 30px; opacity: 1; }
+      to { bottom: 0; opacity: 0; }
+    }
   </style>
 </head>
 <body>
 
   <!-- Logo -->
-  <img class="logo" src="https://raw.githubusercontent.com/angela-pounder/first-test-codex/main/Clydeside%20Social%20-%20Logo%20REFRESH_Inline%20-%20B%26P%20-%20White%20DS%20-%20NO%20BG.png" alt="Clydeside Social Logo">
+  <img src="https://raw.githubusercontent.com/angela-pounder/first-test-codex/main/Clydeside%20Social%20-%20Logo%20REFRESH_Inline%20-%20B%26P%20-%20White%20DS%20-%20NO%20BG.png" 
+       alt="Clydeside Social Logo" style="max-width:180px; margin-bottom:15px;">
 
   <h1>Instagram Engagement & Growth Calculator</h1>
 
@@ -114,96 +111,92 @@
     <h2>Post Engagement</h2>
     <label for="likes">Likes:</label>
     <input type="number" id="likes">
-
     <label for="comments">Comments:</label>
     <input type="number" id="comments">
-
     <label for="followers">Followers:</label>
     <input type="number" id="followers">
-
     <button onclick="calculateEngagement()">Calculate Engagement</button>
-    <p id="result"></p>
+    <div id="result" class="result"></div>
   </div>
 
   <!-- Monthly Snapshot -->
   <div class="section">
     <h2>Monthly Snapshot</h2>
-    <label for="monthlyPosts">Posts this month:</label>
-    <input type="number" id="monthlyPosts">
-
-    <label for="monthlyLikes">Total likes:</label>
-    <input type="number" id="monthlyLikes">
-
-    <label for="monthlyComments">Total comments:</label>
-    <input type="number" id="monthlyComments">
-
-    <label for="monthlyFollowers">Followers at month end:</label>
-    <input type="number" id="monthlyFollowers">
-
+    <label for="posts">Posts this month:</label>
+    <input type="number" id="posts">
+    <label for="totalLikes">Total likes:</label>
+    <input type="number" id="totalLikes">
+    <label for="totalComments">Total comments:</label>
+    <input type="number" id="totalComments">
+    <label for="endFollowers">Followers at month end:</label>
+    <input type="number" id="endFollowers">
     <button onclick="calculateSnapshot()">Get Snapshot</button>
-    <p id="snapshotResult"></p>
+    <div id="snapshotResult" class="result"></div>
   </div>
 
-  <!-- Download PDF -->
+  <!-- Save to PDF -->
   <div class="section">
     <h2>Save Your Results</h2>
     <button onclick="downloadPDF()">Download PDF</button>
   </div>
 
   <!-- Toast -->
-  <div id="toast">PDF Downloaded!</div>
+  <div id="toast" class="toast">PDF Downloaded!</div>
 
+  <!-- jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
-    function calculateEngagement() {
-      const likes = parseInt(document.getElementById('likes').value) || 0;
-      const comments = parseInt(document.getElementById('comments').value) || 0;
-      const followers = parseInt(document.getElementById('followers').value) || 0;
+    const { jsPDF } = window.jspdf;
 
-      let engagement = 0;
-      if (followers > 0) {
-        engagement = ((likes + comments) / followers * 100).toFixed(2);
-      }
-      document.getElementById('result').innerText = 
-        `Engagement rate: ${engagement}%`;
+    function calculateEngagement() {
+      const likes = +document.getElementById('likes').value || 0;
+      const comments = +document.getElementById('comments').value || 0;
+      const followers = +document.getElementById('followers').value || 1;
+      const engagementRate = ((likes + comments) / followers * 100).toFixed(2);
+      document.getElementById('result').innerText =
+        `Engagement Rate: ${engagementRate}%\n(Total Interactions: ${likes + comments})`;
     }
 
     function calculateSnapshot() {
-      const posts = parseInt(document.getElementById('monthlyPosts').value) || 0;
-      const likes = parseInt(document.getElementById('monthlyLikes').value) || 0;
-      const comments = parseInt(document.getElementById('monthlyComments').value) || 0;
-      const followers = parseInt(document.getElementById('monthlyFollowers').value) || 0;
+      const posts = +document.getElementById('posts').value || 0;
+      const totalLikes = +document.getElementById('totalLikes').value || 0;
+      const totalComments = +document.getElementById('totalComments').value || 0;
+      const followers = +document.getElementById('endFollowers').value || 1;
+      const avgEngagement = ((totalLikes + totalComments) / followers / (posts || 1) * 100).toFixed(2);
 
-      let avgEngagement = 0;
-      if (followers > 0 && posts > 0) {
-        avgEngagement = ((likes + comments) / (followers * posts) * 100).toFixed(2);
-      }
-
-      document.getElementById('snapshotResult').innerText = 
-        `Posts: ${posts}\nTotal Likes: ${likes}\nTotal Comments: ${comments}\nFollowers: ${followers}\nAverage Engagement: ${avgEngagement}%`;
+      document.getElementById('snapshotResult').innerText =
+        `Posts: ${posts}\nLikes: ${totalLikes}\nComments: ${totalComments}\nFollowers: ${followers}\nAvg. Engagement/Post: ${avgEngagement}%`;
     }
 
-    async function downloadPDF() {
-      const { jsPDF } = window.jspdf;
+    function downloadPDF() {
       const doc = new jsPDF();
+      const engagement = document.getElementById('result').innerText;
+      const snapshot = document.getElementById('snapshotResult').innerText;
 
-      doc.text("Instagram Engagement & Growth Report", 10, 10);
-      doc.text(document.getElementById('result').innerText, 10, 20);
-      doc.text(document.getElementById('snapshotResult').innerText, 10, 40);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.setTextColor(255, 102, 128); // pink
+      doc.text("Clydeside Social", 20, 20);
 
-      doc.save("Instagram_Report.pdf");
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Instagram Engagement Results", 20, 35);
 
-      showToast("PDF Downloaded!");
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(12);
+      doc.text(engagement || "No post data entered.", 20, 50);
+      doc.text(snapshot || "No snapshot data entered.", 20, 80);
+
+      doc.save("Instagram_Results.pdf");
+      showToast();
     }
 
-    function showToast(message) {
+    function showToast() {
       const toast = document.getElementById("toast");
-      toast.innerText = message;
-      toast.className = "show";
+      toast.className = "toast show";
       setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
     }
   </script>
-
 </body>
 </html>
 
