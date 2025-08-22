@@ -45,7 +45,6 @@
     .muted,.benchmark{font-size:.9rem; opacity:.8; margin-top:.25rem; white-space:pre-line}
     footer{margin-top:12px; font-size:.85rem; opacity:.7; text-align:center}
     .intro{font-size:1rem}
-    .divider{height:1px;background:#eee;margin:14px 0}
   </style>
 </head>
 <body>
@@ -79,7 +78,7 @@
     <label>Comments:</label>
     <input type="number" id="comments" min="0"/>
 
-    <button id="postCalcBtn">Calculate</button>
+    <button id="postCalcBtn" type="button">Calculate</button>
     <div id="postResult" aria-live="polite"></div>
     <p id="postBenchmark" class="benchmark"></p>
     <p id="postTip" class="muted"></p>
@@ -98,7 +97,7 @@
     <label>Posts published this month:</label>
     <input type="number" id="posts" min="0"/>
 
-    <button id="monthCalcBtn">Calculate snapshot</button>
+    <button id="monthCalcBtn" type="button">Calculate snapshot</button>
     <div id="monthResult" aria-live="polite"></div>
     <p id="monthTip" class="muted"></p>
     <div class="actions">
@@ -111,12 +110,12 @@
 </div>
 
 <!-- jsPDF for PDF export -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-YkIh7Xf4QG4V1tQhYwZC9m1I7w8bV+qvQJw1mJp7mF0nP1z9s1p3g3d7lQ2Y7E0mDk2h9k3n1D9q0yXqg8b0A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
-  // Simple picker
+  // helpers
   const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 
-  // Tip banks in simple language (your tweak included)
+  // Tip banks
   const tips = {
     low: [
       "Don’t worry if this one fell a bit flat - try again with a different image or photo",
@@ -141,11 +140,11 @@
     ]
   };
 
-  // State to reuse in PDF
+  // state for PDF and copy
   let postState = { text:"", bench:"", tip:"" };
   let monthState = { text:"", tip:"" };
 
-  // POST: calc + tip + benchmark
+  // POST calculate
   document.getElementById('postCalcBtn').addEventListener('click', function(){
     const followers = +document.getElementById('followers').value || 0;
     const likes = +document.getElementById('likes').value || 0;
@@ -163,6 +162,23 @@
       return;
     }
 
+    // zero interactions case
+    if ((likes + comments) === 0) {
+      out.innerText = "Engagement rate: 0.00%";
+      bench.innerText = "Below the typical 1-3% range.";
+      const starter = [
+        "Ask a question in your caption so people reply",
+        "Use a brighter or clearer image for the main slide",
+        "Try a short Reel with a trending sound",
+        "Post at a time your audience is online",
+        "Share a quick tip they will want to save"
+      ];
+      const tip = pick(starter);
+      tipEl.innerText = tip;
+      postState = { text: out.innerText, bench: bench.innerText, tip };
+      return;
+    }
+
     const er = ((likes+comments)/followers)*100;
     out.innerText = "Engagement rate: " + er.toFixed(2) + "%";
 
@@ -170,7 +186,6 @@
     else if (er <= 3) bench.innerText = "Around the typical 1-3% range.";
     else bench.innerText = "Above the typical 1-3% range - nice!";
 
-    // Build smart tips and avoid suggesting same format they used
     const formats = {
       single: ["Test a carousel this week.", "Try a short Reel."],
       carousel: ["Try a short Reel with the same topic.", "Repurpose the best slide as a standalone tip."],
@@ -183,7 +198,7 @@
     else if (er < 3) pool = tips.medium.concat(formats[postType]||[]);
     else pool = tips.high.concat(formats[postType]||[]);
 
-    // filter out suggesting the same format they already used
+    // avoid suggesting the same format they used
     pool = pool.filter(t=>{
       if (postType==='carousel' && /carousel/i.test(t)) return false;
       if (postType==='reel' && /reel/i.test(t)) return false;
@@ -197,7 +212,7 @@
     postState = { text: out.innerText, bench: bench.innerText, tip };
   });
 
-  // MONTH: calc + tips
+  // MONTH calculate
   document.getElementById('monthCalcBtn').addEventListener('click', function(){
     const start = +document.getElementById('followersStart').value || 0;
     const end = +document.getElementById('followersEnd').value || 0;
@@ -214,8 +229,8 @@
     }
 
     const growth = ((end-start)/start)*100;
-    const perWeek = posts/4.3;
-    const projected = Math.round(perWeek*4.3);
+    const perWeek = posts ? (posts/4.3) : 0;
+    const projected = posts ? Math.round(perWeek*4.3) : 0;
 
     out.innerText =
       "Growth rate: " + growth.toFixed(2) + "%\n" +
@@ -228,35 +243,82 @@
     else if (growth < 3) notes.push("Nice steady growth.");
     else notes.push("Strong growth - keep it up.");
 
-    if (perWeek < 2) notes.push("Consistency is low. Aim for about 3 posts per week.");
-    else if (perWeek < 3) notes.push("Nearly there - try scheduling one more post.");
-    else notes.push("Consistency on point - schedule next month now.");
+    if (posts === 0) {
+      notes.push("No posts this month - aim for at least 1 to 2 posts a week.");
+    } else if (perWeek < 2) {
+      notes.push("Consistency is low. Aim for about 3 posts per week.");
+    } else if (perWeek < 3) {
+      notes.push("Nearly there - try scheduling one more post.");
+    } else {
+      notes.push("Consistency on point - schedule next month now.");
+    }
 
     const tip = notes.join(" ");
     tipEl.innerText = tip;
-
     monthState = { text: out.innerText, tip };
   });
 
-  // Copy helpers
+  // Copy
   function copyText(which){
     const text = which==='post'
       ? [postState.text, postState.bench, postState.tip].filter(Boolean).join("\n")
       : [monthState.text, monthState.tip].filter(Boolean).join("\n");
+    if (!text.trim()) { alert("Please calculate first"); return; }
     navigator.clipboard.writeText(text).then(()=>alert("Results copied"));
   }
 
-  // Combined PDF: logo + pink headings + both sections + footer
+  // Combined PDF
   async function downloadPDFCombined(){
-    // If user forgot to calculate, trigger both
+    // ensure we have results
     if(!postState.text) document.getElementById('postCalcBtn').click();
     if(!monthState.text) document.getElementById('monthCalcBtn').click();
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // try to load logo; if it fails, continue without
-    const addReport = () => {
-      // Header
-      doc.setFont("helvetica","bold
+    // try add logo
+    const logoUrl = "https://raw.githubusercontent.com/angela-pounder/first-test-codex/main/Clydeside%20Social%20-%20Logo%20REFRESH_Inline%20-%20B%26P%20-%20White%20DS%20-%20NO%20BG.png";
+    try{
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = logoUrl;
+      await new Promise((res, rej)=>{ img.onload=res; img.onerror=res; }); // continue even if fails
+      if (img.complete && img.naturalWidth) {
+        doc.addImage(img, "PNG", 80, 10, 50, 20);
+      }
+    }catch(e){/* ignore */}
+
+    // Heading
+    doc.setFont("helvetica","bold");
+    doc.setTextColor(255, 102, 127); // pink
+    doc.setFontSize(18);
+    doc.text("Instagram Results Report", 20, 45);
+
+    // Post section
+    doc.setTextColor(0,0,0);
+    doc.setFontSize(14);
+    doc.text("Post engagement", 20, 60);
+    doc.setFontSize(12);
+    const postBlock = [postState.text, postState.bench, postState.tip].filter(Boolean).join("\n");
+    doc.text(doc.splitTextToSize(postBlock, 170), 20, 68);
+
+    // Monthly section
+    let y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 110;
+    // ensure spacing
+    doc.setFontSize(14);
+    doc.text("Monthly snapshot", 20, 110);
+    doc.setFontSize(12);
+    const monthBlock = [monthState.text, monthState.tip].filter(Boolean).join("\n");
+    doc.text(doc.splitTextToSize(monthBlock, 170), 20, 118);
+
+    // Footer
+    doc.setFontSize(10);
+    doc.setTextColor(120);
+    doc.text("© Clydeside Social", 20, 285);
+
+    doc.save("Clydeside_Social_Instagram_Report.pdf");
+  }
+</script>
+</body>
+</html>
 
