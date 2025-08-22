@@ -388,57 +388,60 @@ const tipBanks = {
       setTimeout(()=>t.className=t.className.replace('show',''),3000);
     }
 
-    // Branded PDF (both sections)
-    function downloadPDF(){
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+    // Branded PDF (both sections) — square logo, pink headings, blue bars
+function downloadPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
 
-      // Logo (best-effort; skip if it fails)
-      try{
-        doc.addImage(
-  "https://raw.githubusercontent.com/angela-pounder/first-test-codex/main/Clydeside%20Social%20-%20Logo%20REFRESH_Inline%20-%20B%26P%20-%20White%20DS%20-%20NO%20BG.png",
-  "PNG",
-  70, 10, 70, 70
-);
+  // Try to place the square logo (70x70). If it fails, just continue.
+  try {
+    doc.addImage(
+      "https://raw.githubusercontent.com/angela-pounder/first-test-codex/main/Clydeside%20Social%20-%20Logo%20REFRESH_Inline%20-%20B%26P%20-%20White%20DS%20-%20NO%20BG.png",
+      "PNG",
+      70, 10,   // x, y
+      70, 70    // width, height (square so it won't squish)
+    );
+  } catch (e) {}
 
-      }catch(e){}
+  // Title (below the logo)
+  doc.setFont("helvetica","bold");
+  doc.setTextColor(255, 102, 128); // brand pink
+  doc.setFontSize(18);
+  doc.text("Instagram Results Report", 20, 90);
 
-      // Title
-      doc.setFont("helvetica","bold");
-      doc.setTextColor(255,102,128); // pink
-      doc.setFontSize(18);
-      doc.text("Instagram Results Report", 20, 36);
+  // --- Post section ---
+  doc.setFillColor(169, 221, 232); // brand blue
+  doc.rect(20, 98, 170, 10, "F");
+  doc.setTextColor(0,0,0);
+  doc.setFontSize(14);
+  doc.text("Post engagement", 22, 105);
 
-      // Section: Post
-      doc.setFillColor(169,221,232); // blue bar
-      doc.rect(20, 44, 170, 10, "F");
-      doc.setTextColor(0,0,0);
-      doc.setFontSize(14);
-      doc.text("Post engagement", 22, 51);
+  const postBlock = [postState?.text, postState?.bench, postState?.tip]
+    .filter(Boolean).join("\n") || "No post data calculated.";
+  doc.setFontSize(12);
+  doc.text(doc.splitTextToSize(postBlock, 170), 22, 118);
 
-      const postBlock = [postState.text, postState.bench, postState.tip]
-        .filter(Boolean).join("\n") || "No post data calculated.";
-      doc.setFontSize(12);
-      doc.text(doc.splitTextToSize(postBlock, 170), 22, 64);
+  // --- Monthly section ---
+  doc.setFillColor(169, 221, 232);
+  doc.rect(20, 160, 170, 10, "F");
+  doc.setFontSize(14);
+  doc.text("Monthly snapshot", 22, 167);
 
-      // Section: Month
-      doc.setFillColor(169,221,232);
-      doc.rect(20, 110, 170, 10, "F");
-      doc.setFontSize(14);
-      doc.text("Monthly snapshot", 22, 117);
+  const monthBlock = [monthState?.text, monthState?.tip]
+    .filter(Boolean).join("\n") || "No monthly data calculated.";
+  doc.setFontSize(12);
+  doc.text(doc.splitTextToSize(monthBlock, 170), 22, 180);
 
-      const monthBlock = [monthState.text, monthState.tip]
-        .filter(Boolean).join("\n") || "No monthly data calculated.";
-      doc.setFontSize(12);
-      doc.text(doc.splitTextToSize(monthBlock, 170), 22, 130);
+  // Footer
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text("© Clydeside Social", 20, 285);
 
-      // Footer
-      doc.setFontSize(10);
-      doc.setTextColor(100);
-      doc.text("© Clydeside Social", 20, 285);
+  // Save & toast
+  doc.save("Clydeside_Social_Instagram_Report.pdf");
+  if (typeof showToast === "function") showToast("PDF downloaded");
+}
 
-      doc.save("Clydeside_Social_Instagram_Report.pdf");
-      showToast("PDF downloaded");
     }
   </script>
 </body>
