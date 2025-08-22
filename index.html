@@ -5,6 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Instagram Engagement Toolkit • Clydeside Social</title>
   <style>
+    /* Toast Notification */
+#toast {
+  visibility: hidden;
+  min-width: 200px;
+  margin-left: -100px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 8px;
+  padding: 12px;
+  position: fixed;
+  z-index: 1000;
+  left: 50%;
+  bottom: 30px;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.5s, bottom 0.5s;
+}
+#toast.show {
+  visibility: visible;
+  opacity: 1;
+  bottom: 50px;
+}
+
     :root{
       --pink:#ff667f;
       --blue:#a9dde8;
@@ -319,6 +343,57 @@
     doc.save("Clydeside_Social_Instagram_Report.pdf");
   }
 </script>
+  // Combined PDF
+async function downloadPDFCombined(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  // Logo (safe load, won't break if it fails)
+  const logoUrl = "https://raw.githubusercontent.com/angela-pounder/first-test-codex/main/Clydeside%20Social%20-%20Logo%20REFRESH_Inline%20-%20B%26P%20-%20White%20DS%20-%20NO%20BG.png";
+  try {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = logoUrl;
+    await new Promise(res => { img.onload=res; img.onerror=res; });
+    if (img.naturalWidth) {
+      doc.addImage(img, "PNG", 80, 10, 50, 20);
+    }
+  } catch(e) {
+    console.warn("Logo failed to load, skipping.");
+  }
+
+  // Heading
+  doc.setFont("helvetica","bold");
+  doc.setTextColor(255, 102, 127); // pink
+  doc.setFontSize(18);
+  doc.text("Instagram Results Report", 20, 45);
+
+  // POST results
+  doc.setTextColor(0,0,0);
+  doc.setFontSize(14);
+  doc.text("Post engagement", 20, 60);
+  doc.setFontSize(12);
+  const postBlock = [postState.text, postState.bench, postState.tip].filter(Boolean).join("\n");
+  doc.text(doc.splitTextToSize(postBlock || "No post data calculated.", 170), 20, 68);
+
+  // MONTH results
+  doc.setFontSize(14);
+  doc.text("Monthly snapshot", 20, 110);
+  doc.setFontSize(12);
+  const monthBlock = [monthState.text, monthState.tip].filter(Boolean).join("\n");
+  doc.text(doc.splitTextToSize(monthBlock || "No monthly data calculated.", 170), 20, 118);
+
+  // Footer
+  doc.setFontSize(10);
+  doc.setTextColor(120);
+  doc.text("© Clydeside Social", 20, 285);
+
+  doc.save("Clydeside_Social_Instagram_Report.pdf");
+}
+
+  <!-- Toast Notification -->
+<div id="toast">✅ PDF downloaded</div>
+
 </body>
 </html>
 
