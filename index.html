@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Instagram Engagement Rate Calculator</title>
+  <style>
+    :root {
+      --accent: #ff667f;
+      --background: #a9dde8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial Rounded MT Bold', sans-serif;
+      background-color: var(--background);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 1rem;
+    }
+
+    .calculator {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      max-width: 720px;
+      width: 100%;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--accent);
+    }
+
+    label {
+      display: block;
+      margin-top: 1rem;
+    }
+
+    input {
+      width: 100%;
+      margin-top: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 16px;
+      font-family: inherit;
+    }
+
+    button {
+      margin-top: 1.5rem;
+      width: 100%;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 16px;
+      background: linear-gradient(90deg, #ff667f, #a9dde8);
+      color: #fff;
+      font-size: 1rem;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: opacity 0.2s;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    button:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(255, 102, 127, 0.4);
+    }
+
+    #result {
+      margin-top: 1.5rem;
+      font-weight: bold;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    @media (max-width: 600px) {
+      .calculator {
+        padding: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <h1>Instagram Engagement Rate Calculator</h1>
+    <label for="followers">Followers</label>
+    <input type="number" id="followers" min="0" />
+    <label for="likes">Likes</label>
+    <input type="number" id="likes" min="0" />
+    <label for="comments">Comments</label>
+    <input type="number" id="comments" min="0" />
+    <button id="calc-btn">Calculate</button>
+    <div id="result"></div>
+  </div>
+  <script>
+    document.getElementById('calc-btn').addEventListener('click', function () {
+      const followers = parseFloat(document.getElementById('followers').value) || 0;
+      const likes = parseFloat(document.getElementById('likes').value) || 0;
+      const comments = parseFloat(document.getElementById('comments').value) || 0;
+      if (followers <= 0) {
+        document.getElementById('result').textContent = 'Followers must be greater than zero.';
+        return;
+      }
+      const engagementRate = ((likes + comments) / followers) * 100;
+      document.getElementById('result').textContent = 'Engagement Rate: ' + engagementRate.toFixed(2) + '%';
+    });
+  </script>
+</body>
+</html>
