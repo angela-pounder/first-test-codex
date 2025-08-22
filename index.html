@@ -13,9 +13,17 @@
       text-align: center;
       padding: 20px;
     }
+
+    img.logo {
+      max-width: 180px;
+      margin-bottom: 10px;
+    }
+
     h1 {
       color: #ff6680; /* brand pink */
+      margin-bottom: 25px;
     }
+
     .section {
       background: #fff;
       border: 2px solid #ff6680;
@@ -24,229 +32,180 @@
       margin: 20px auto;
       max-width: 500px;
       box-shadow: 0px 4px 8px rgba(0,0,0,0.05);
+      text-align: left; /* makes headings align left */
     }
+
+    h2 {
+      color: #333;
+      margin-top: 0;
+    }
+
     label {
       display: block;
       margin: 10px 0 5px;
       font-weight: bold;
     }
+
     input {
+      width: 100%;
       padding: 8px;
-      width: 80%;
-      margin-bottom: 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
+      border: 1px solid #ddd;
+      border-radius: 8px;
     }
+
     button {
-      background-color: #ff6680;
-      color: white;
+      margin-top: 12px;
+      padding: 10px 15px;
       border: none;
-      padding: 10px 20px;
-      margin-top: 10px;
       border-radius: 8px;
       cursor: pointer;
+      background: linear-gradient(135deg, #ff6680, #66a6ff);
+      color: #fff;
+      font-weight: bold;
+      font-size: 1rem;
+      display: block;
+      width: 100%;
     }
+
     button:hover {
-      background-color: #e05570;
+      opacity: 0.9;
     }
-    .results {
-      margin-top: 15px;
-      font-size: 14px;
-      color: #333;
+
+    #result, #snapshotResult {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #ff6680;
+      white-space: pre-line;
     }
-    /* Toast Notification */
+
+    /* Toast notification */
     #toast {
       visibility: hidden;
       min-width: 200px;
       margin-left: -100px;
-      background-color: #ff6680; /* brand pink */
+      background-color: #333;
       color: #fff;
       text-align: center;
       border-radius: 8px;
       padding: 12px;
       position: fixed;
-      z-index: 1000;
+      z-index: 1;
       left: 50%;
       bottom: 30px;
       font-size: 14px;
-      opacity: 0;
-      transition: opacity 0.5s, bottom 0.5s;
     }
     #toast.show {
       visibility: visible;
-      opacity: 1;
-      bottom: 50px;
+      animation: fadein 0.5s, fadeout 0.5s 2.5s;
     }
+    @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+    @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
   </style>
 </head>
 <body>
 
-  <img src="https://raw.githubusercontent.com/angela-pounder/first-test-codex/main/Clydeside%20Social%20-%20Logo%20REFRESH_Inline%20-%20B%26P%20-%20White%20DS%20-%20NO%20BG.png" alt="Clydeside Social Logo" width="220" style="margin-bottom:20px;">
+  <!-- Logo -->
+  <img class="logo" src="https://raw.githubusercontent.com/angela-pounder/first-test-codex/main/Clydeside%20Social%20-%20Logo%20REFRESH_Inline%20-%20B%26P%20-%20White%20DS%20-%20NO%20BG.png" alt="Clydeside Social Logo">
 
   <h1>Instagram Engagement & Growth Calculator</h1>
 
-  <!-- Post Calculator -->
+  <!-- Post Engagement -->
   <div class="section">
     <h2>Post Engagement</h2>
-    <label>Likes:</label>
+    <label for="likes">Likes:</label>
     <input type="number" id="likes">
-    <label>Comments:</label>
+
+    <label for="comments">Comments:</label>
     <input type="number" id="comments">
-    <label>Followers:</label>
+
+    <label for="followers">Followers:</label>
     <input type="number" id="followers">
+
     <button onclick="calculateEngagement()">Calculate Engagement</button>
-    <div class="results" id="engagementResult"></div>
+    <p id="result"></p>
   </div>
 
   <!-- Monthly Snapshot -->
   <div class="section">
     <h2>Monthly Snapshot</h2>
-    <label>Posts this month:</label>
-    <input type="number" id="postsMonth">
-    <label>Total likes this month:</label>
-    <input type="number" id="likesMonth">
-    <label>Followers at start of month:</label>
-    <input type="number" id="followersStart">
-    <label>Followers now:</label>
-    <input type="number" id="followersEnd">
-    <button onclick="calculateMonthly()">Calculate Monthly Snapshot</button>
-    <div class="results" id="monthlyResult"></div>
+    <label for="monthlyPosts">Posts this month:</label>
+    <input type="number" id="monthlyPosts">
+
+    <label for="monthlyLikes">Total likes:</label>
+    <input type="number" id="monthlyLikes">
+
+    <label for="monthlyComments">Total comments:</label>
+    <input type="number" id="monthlyComments">
+
+    <label for="monthlyFollowers">Followers at month end:</label>
+    <input type="number" id="monthlyFollowers">
+
+    <button onclick="calculateSnapshot()">Get Snapshot</button>
+    <p id="snapshotResult"></p>
   </div>
 
-  <button onclick="downloadPDFCombined()">Download PDF Report</button>
+  <!-- Download PDF -->
+  <div class="section">
+    <h2>Save Your Results</h2>
+    <button onclick="downloadPDF()">Download PDF</button>
+  </div>
 
   <!-- Toast -->
-  <div id="toast"></div>
+  <div id="toast">PDF Downloaded!</div>
 
-  <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
-    let postState = { text: "", bench: "", tip: "" };
-    let monthState = { text: "", tip: "" };
+    function calculateEngagement() {
+      const likes = parseInt(document.getElementById('likes').value) || 0;
+      const comments = parseInt(document.getElementById('comments').value) || 0;
+      const followers = parseInt(document.getElementById('followers').value) || 0;
 
-    // Toast messages
-    const toastMessages = [
-      "✅ Your PDF is ready!",
-      "🎉 Report saved successfully!",
-      "📊 Your Insta report has downloaded",
-      "👌 PDF created - check your downloads",
-      "💾 Saved! Your report is on your computer"
-    ];
-
-    // Tips
-    const tipsLow = [
-      "Don’t worry if this one fell a bit flat - try again with a different image or photo",
-      "Ask a question at the end of your caption so people reply",
-      "Share a quick tip as a carousel so people save it",
-      "Post at a time you know your followers are online",
-      "Use a Reel with a trending sound to reach new people"
-    ];
-    const tipsMed = [
-      "This is fine - now try making the hook in your caption stronger",
-      "Add a poll or quiz in Stories to get more people talking",
-      "Try posting a Reel and a carousel on the same topic",
-      "Share a tip that starts with Save this for later",
-      "Keep posting 2 to 3 times a week so you stay consistent"
-    ];
-    const tipsHigh = [
-      "Well done - this one worked, do more like it",
-      "Pin this post to the top of your profile for extra views",
-      "Repurpose it into another format, like a Reel or carousel",
-      "Post a follow up answering comments or questions",
-      "Turn it into a tip series so people come back for more"
-    ];
-
-    function randomItem(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-
-    function calculateEngagement(){
-      const likes = parseInt(document.getElementById("likes").value) || 0;
-      const comments = parseInt(document.getElementById("comments").value) || 0;
-      const followers = parseInt(document.getElementById("followers").value) || 0;
-      if(followers === 0){ alert("Add followers number!"); return; }
-      const engagementRate = ((likes + comments)/followers)*100;
-
-      let bench="", tip="";
-      if(engagementRate < 1) { bench="Below average"; tip=randomItem(tipsLow); }
-      else if(engagementRate < 3) { bench="Around average"; tip=randomItem(tipsMed); }
-      else { bench="Above average"; tip=randomItem(tipsHigh); }
-
-      postState.text=`Engagement Rate: ${engagementRate.toFixed(2)}%`;
-      postState.bench=`This is ${bench}.`;
-      postState.tip=`Action tip: ${tip}`;
-
-      document.getElementById("engagementResult").innerHTML =
-        `${postState.text}<br>${postState.bench}<br>${postState.tip}`;
+      let engagement = 0;
+      if (followers > 0) {
+        engagement = ((likes + comments) / followers * 100).toFixed(2);
+      }
+      document.getElementById('result').innerText = 
+        `Engagement rate: ${engagement}%`;
     }
 
-    function calculateMonthly(){
-      const posts = parseInt(document.getElementById("postsMonth").value) || 0;
-      const likes = parseInt(document.getElementById("likesMonth").value) || 0;
-      const start = parseInt(document.getElementById("followersStart").value) || 0;
-      const end = parseInt(document.getElementById("followersEnd").value) || 0;
-      if(start === 0){ alert("Add start followers!"); return; }
-      const growthRate = ((end-start)/start)*100;
+    function calculateSnapshot() {
+      const posts = parseInt(document.getElementById('monthlyPosts').value) || 0;
+      const likes = parseInt(document.getElementById('monthlyLikes').value) || 0;
+      const comments = parseInt(document.getElementById('monthlyComments').value) || 0;
+      const followers = parseInt(document.getElementById('monthlyFollowers').value) || 0;
 
-      monthState.text = `Posts: ${posts}, Likes: ${likes}, Growth: ${growthRate.toFixed(2)}%`;
-      monthState.tip = growthRate > 0
-        ? "Great - your account is growing"
-        : "Keep going - try posting more Reels or carousels";
+      let avgEngagement = 0;
+      if (followers > 0 && posts > 0) {
+        avgEngagement = ((likes + comments) / (followers * posts) * 100).toFixed(2);
+      }
 
-      document.getElementById("monthlyResult").innerHTML =
-        `${monthState.text}<br>${monthState.tip}`;
+      document.getElementById('snapshotResult').innerText = 
+        `Posts: ${posts}\nTotal Likes: ${likes}\nTotal Comments: ${comments}\nFollowers: ${followers}\nAverage Engagement: ${avgEngagement}%`;
     }
 
-    async function downloadPDFCombined(){
+    async function downloadPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
 
-      // Logo
-      const logoUrl = "https://raw.githubusercontent.com/angela-pounder/first-test-codex/main/Clydeside%20Social%20-%20Logo%20REFRESH_Inline%20-%20B%26P%20-%20White%20DS%20-%20NO%20BG.png";
-      try {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.src = logoUrl;
-        await new Promise(res => { img.onload=res; img.onerror=res; });
-        if (img.naturalWidth) {
-          doc.addImage(img, "PNG", 80, 10, 50, 20);
-        }
-      } catch(e) { console.warn("Logo failed to load, skipping."); }
+      doc.text("Instagram Engagement & Growth Report", 10, 10);
+      doc.text(document.getElementById('result').innerText, 10, 20);
+      doc.text(document.getElementById('snapshotResult').innerText, 10, 40);
 
-      // Heading
-      doc.setFont("helvetica","bold");
-      doc.setTextColor(255, 102, 127);
-      doc.setFontSize(18);
-      doc.text("Instagram Results Report", 20, 45);
+      doc.save("Instagram_Report.pdf");
 
-      // Post results
-      doc.setTextColor(0,0,0);
-      doc.setFontSize(14);
-      doc.text("Post Engagement", 20, 60);
-      doc.setFontSize(12);
-      const postBlock = [postState.text, postState.bench, postState.tip].filter(Boolean).join("\n");
-      doc.text(doc.splitTextToSize(postBlock || "No post data calculated.", 170), 20, 68);
+      showToast("PDF Downloaded!");
+    }
 
-      // Monthly results
-      doc.setFontSize(14);
-      doc.text("Monthly Snapshot", 20, 110);
-      doc.setFontSize(12);
-      const monthBlock = [monthState.text, monthState.tip].filter(Boolean).join("\n");
-      doc.text(doc.splitTextToSize(monthBlock || "No monthly data calculated.", 170), 20, 118);
-
-      // Footer
-      doc.setFontSize(10);
-      doc.setTextColor(120);
-      doc.text("© Clydeside Social", 20, 285);
-
-      doc.save("Clydeside_Social_Instagram_Report.pdf");
-
-      // Random toast
+    function showToast(message) {
       const toast = document.getElementById("toast");
-      toast.textContent = randomItem(toastMessages);
+      toast.innerText = message;
       toast.className = "show";
       setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
     }
   </script>
+
 </body>
 </html>
+
 
 
