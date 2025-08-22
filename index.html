@@ -97,7 +97,7 @@
       </div>
     </div>
 
-    <!-- Monthly Snapshot (start + end + posts) -->
+    <!-- Monthly Snapshot -->
     <div class="card" id="monthCard">
       <h2>Monthly snapshot</h2>
 
@@ -129,247 +129,190 @@
   <!-- jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
+    // helpers
     const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+    const lines = arr => arr.filter(Boolean).join("\n");
 
-    // Action tips (simple language)
-    // --- Micro feedback helpers ---
-const pick = arr => arr[Math.floor(Math.random()*arr.length)];
-const lines = arr => arr.filter(Boolean).join("\n");
+    function showToast(msg="Done"){
+      const t=document.getElementById('toast');
+      t.textContent=msg;
+      t.className='show';
+      setTimeout(()=>t.className=t.className.replace('show',''),3000);
+    }
 
-// Optional “streak” nudge using localStorage
-function streakNudge() {
-  try {
-    const key = "cs_toolkit_uses_" + new Date().toISOString().slice(0,7); // YYYY-MM
-    const n = parseInt(localStorage.getItem(key) || "0", 10) + 1;
-    localStorage.setItem(key, String(n));
-    if (n >= 2) return `Nice — you’re building a habit. You’ve checked in ${n} times this month.`;
-  } catch(e) {}
-  return "";
-}
+    // habit streak (optional)
+    function streakNudge() {
+      try {
+        const key = "cs_toolkit_uses_" + new Date().toISOString().slice(0,7); // YYYY-MM
+        const n = parseInt(localStorage.getItem(key) || "0", 10) + 1;
+        localStorage.setItem(key, String(n));
+        if (n >= 2) return `Nice — you’re building a habit. You’ve checked in ${n} times this month.`;
+      } catch(e) {}
+      return "";
+    }
 
-// Micro‑tip banks
-const tipBanks = {
-  starter: [
-    "Ask a question in your caption so people reply",
-    "Use a clearer or brighter main image",
-    "Try a short Reel with a trending sound",
-    "Post at a time your audience is online",
-    "Share a quick tip they will want to save"
-  ],
-  hook: [
-    "Open with a strong hook — promise the result in the first line",
-    "Make slide 1 super clear — one simple idea",
-    "Front‑load value — give the best tip early"
-  ],
-  cta: [
-    "End with a simple call to action like Save this for later",
-    "Ask people to comment with a number or emoji",
-    "Invite DMs with a clear next step"
-  ],
-  format: {
-    single: [
-      "Try a carousel on the same topic",
-      "Turn the post into a 15 to 30s Reel"
-    ],
-    carousel: [
-      "Test the same idea as a short Reel",
-      "Turn the best slide into a single image post"
-    ],
-    reel: [
-      "Repurpose it into a 5 to 7 slide carousel",
-      "Add a checklist as a static post"
-    ],
-    video: [
-      "Cut a short Reel from the best moment",
-      "Slice key moments into a carousel"
-    ]
-  },
-  monthLowPosts: [
-    "Aim for about 3 posts per week — batch and schedule",
-    "Block 1 hour to plan next week’s 3 posts"
-  ],
-  monthOkPosts: [
-    "Nearly there — add one extra post next week",
-    "Try a collab or shout‑out to tap a new audience"
-  ],
-  monthStrongPosts: [
-    "Great rhythm — pre‑schedule next week today",
-    "Start a simple series so people come back"
-  ],
-  monthGrowthUp: [
-    "Growth looks good — repeat the topics that worked",
-    "Try boosting a top post for £5–£10 to widen reach"
-  ],
-  monthGrowthFlat: [
-    "Flat growth — test one new format this week",
-    "Do a Story poll to spark replies"
-  ],
-  monthGrowthDown: [
-    "Dipped a bit — re‑engage warm followers in Stories",
-    "Share a behind‑the‑scenes post to rebuild trust"
-  ]
-};
+    // micro‑tip banks
+    const tipBanks = {
+      starter: [
+        "Ask a question in your caption so people reply",
+        "Use a clearer or brighter main image",
+        "Try a short Reel with a trending sound",
+        "Post at a time your audience is online",
+        "Share a quick tip they will want to save"
+      ],
+      hook: [
+        "Open with a strong hook — promise the result in the first line",
+        "Make slide 1 super clear — one simple idea",
+        "Front‑load value — give the best tip early"
+      ],
+      cta: [
+        "End with a simple call to action like Save this for later",
+        "Ask people to comment with a number or emoji",
+        "Invite DMs with a clear next step"
+      ],
+      format: {
+        single: [
+          "Try a carousel on the same topic",
+          "Turn the post into a 15 to 30s Reel"
+        ],
+        carousel: [
+          "Test the same idea as a short Reel",
+          "Turn the best slide into a single image post"
+        ],
+        reel: [
+          "Repurpose it into a 5 to 7 slide carousel",
+          "Add a checklist as a static post"
+        ],
+        video: [
+          "Cut a short Reel from the best moment",
+          "Slice key moments into a carousel"
+        ]
+      },
+      monthLowPosts: [
+        "Aim for about 3 posts per week — batch and schedule",
+        "Block 1 hour to plan next week’s 3 posts"
+      ],
+      monthOkPosts: [
+        "Nearly there — add one extra post next week",
+        "Try a collab or shout‑out to tap a new audience"
+      ],
+      monthStrongPosts: [
+        "Great rhythm — pre‑schedule next week today",
+        "Start a simple series so people come back"
+      ],
+      monthGrowthUp: [
+        "Growth looks good — repeat the topics that worked",
+        "Try boosting a top post for £5–£10 to widen reach"
+      ],
+      monthGrowthFlat: [
+        "Flat growth — test one new format this week",
+        "Do a Story poll to spark replies"
+      ],
+      monthGrowthDown: [
+        "Dipped a bit — re‑engage warm followers in Stories",
+        "Share a behind‑the‑scenes post to rebuild trust"
+      ]
+    };
 
-    // State for PDF/copy
+    // state for PDF/copy
     let postState = { text:"", bench:"", tip:"" };
     let monthState = { text:"", tip:"" };
 
-    // POST: calculate + tip
+    // POST: calculate + tips
     document.getElementById('postCalcBtn').addEventListener('click', function(){
-  const followers = +document.getElementById('followers').value || 0;
-  const likes = +document.getElementById('likes').value || 0;
-  const comments = +document.getElementById('comments').value || 0;
-  const postType = (document.getElementById('postType').value || 'single').toLowerCase();
+      const followers = +document.getElementById('followers').value || 0;
+      const likes = +document.getElementById('likes').value || 0;
+      const comments = +document.getElementById('comments').value || 0;
+      const postType = (document.getElementById('postType').value || 'single').toLowerCase();
 
-  const out = document.getElementById('postResult');
-  const bench = document.getElementById('postBench');
-  const tipEl = document.getElementById('postTip');
+      const out = document.getElementById('postResult');
+      const bench = document.getElementById('postBench');
+      const tipEl = document.getElementById('postTip');
 
-  if(!followers){
-    out.innerText = "Please add follower count.";
-    bench.innerText=""; tipEl.innerText="";
-    postState = { text: out.innerText, bench:"", tip:"" };
-    return;
-  }
+      if(!followers){
+        out.innerText = "Please add follower count.";
+        bench.innerText=""; tipEl.innerText="";
+        postState = { text: out.innerText, bench:"", tip:"" };
+        return;
+      }
 
-  // zero interactions
-  if ((likes + comments) === 0){
-    out.innerText = "Engagement rate: 0.00%";
-    bench.innerText = "Below the typical 1–3% range.";
-    const micro = [
-      pick(tipBanks.starter),
-      pick(tipBanks.hook),
-      streakNudge()
-    ];
-    tipEl.innerText = lines(micro);
-    postState = { text: out.innerText, bench: bench.innerText, tip: tipEl.innerText };
-    return;
-  }
-
-  const er = ((likes + comments) / followers) * 100;
-  out.innerText = "Engagement rate: " + er.toFixed(2) + "%";
-
-  if (er < 1) bench.innerText = "Below the typical 1–3% range.";
-  else if (er <= 3) bench.innerText = "Around the typical 1–3% range.";
-  else bench.innerText = "Above the typical 1–3% range — nice!";
-
-  // Build 2–3 micro tips and avoid suggesting the same format they used
-  let formatIdeas = (tipBanks.format[postType] || []).filter(t=>{
-    if (postType==='carousel' && /carousel/i.test(t)) return false;
-    if (postType==='reel' && /reel/i.test(t)) return false;
-    if (postType==='single' && /single|static/i.test(t)) return false;
-    return true;
-  });
-
-  const micro = [];
-  if (er < 1) micro.push(pick(tipBanks.starter));
-  else if (er < 3) micro.push(pick(tipBanks.hook));
-  else micro.push("Well done — double down on this topic and style");
-
-  micro.push(pick(formatIdeas.length ? formatIdeas : tipBanks.hook));
-  micro.push(pick(tipBanks.cta));
-  micro.push(streakNudge());
-
-  tipEl.innerText = lines(micro.slice(0,3)); // keep it short
-
-  postState = { text: out.innerText, bench: bench.innerText, tip: tipEl.innerText };
-});
-
-
-      // zero interactions
       if ((likes + comments) === 0){
         out.innerText = "Engagement rate: 0.00%";
-        bench.innerText = "Below the typical 1-3% range.";
-        const starter = [
-          "Ask a question so people reply",
-          "Use a clearer main image",
-          "Try a short Reel with a trending sound",
-          "Post at a time your audience is online",
-          "Share a tip people will want to save"
-        ];
-        const tip = pick(starter);
-        tipEl.innerText = tip;
-        postState = { text: out.innerText, bench: bench.innerText, tip };
+        bench.innerText = "Below the typical 1–3% range.";
+        const micro = [ pick(tipBanks.starter), pick(tipBanks.hook), streakNudge() ];
+        tipEl.innerText = lines(micro);
+        postState = { text: out.innerText, bench: bench.innerText, tip: tipEl.innerText };
         return;
       }
 
       const er = ((likes + comments) / followers) * 100;
       out.innerText = "Engagement rate: " + er.toFixed(2) + "%";
 
-      if (er < 1) bench.innerText = "Below the typical 1-3% range.";
-      else if (er <= 3) bench.innerText = "Around the typical 1-3% range.";
-      else bench.innerText = "Above the typical 1-3% range - nice!";
+      if (er < 1) bench.innerText = "Below the typical 1–3% range.";
+      else if (er <= 3) bench.innerText = "Around the typical 1–3% range.";
+      else bench.innerText = "Above the typical 1–3% range — nice!";
 
-      // avoid suggesting same format they used
-      const formatIdeas = {
-        single: ["Try a carousel this week.", "Post a short Reel on the same topic."],
-        carousel: ["Post a short Reel with the same idea.", "Turn the best slide into a single post."],
-        reel: ["Turn this into a 5 to 7 slide carousel.", "Add a checklist as a static post."],
-        video: ["Cut a 15 to 30s Reel.", "Turn key moments into a carousel."]
-      };
-
-      let pool = [];
-      if (er < 1) pool = tipsLow.concat(formatIdeas[postType] || []);
-      else if (er < 3) pool = tipsMed.concat(formatIdeas[postType] || []);
-      else pool = tipsHigh.concat(formatIdeas[postType] || []);
-
-      pool = pool.filter(t=>{
+      let formatIdeas = (tipBanks.format[postType] || []).filter(t=>{
         if (postType==='carousel' && /carousel/i.test(t)) return false;
         if (postType==='reel' && /reel/i.test(t)) return false;
         if (postType==='single' && /single|static/i.test(t)) return false;
         return true;
       });
 
-      const tip = pick(pool);
-      tipEl.innerText = tip;
+      const micro = [];
+      if (er < 1) micro.push(pick(tipBanks.starter));
+      else if (er < 3) micro.push(pick(tipBanks.hook));
+      else micro.push("Well done — double down on this topic and style");
+      micro.push(pick(formatIdeas.length ? formatIdeas : tipBanks.hook));
+      micro.push(pick(tipBanks.cta));
+      micro.push(streakNudge());
 
-      postState = { text: out.innerText, bench: bench.innerText, tip };
+      tipEl.innerText = lines(micro.slice(0,3));
+
+      postState = { text: out.innerText, bench: bench.innerText, tip: tipEl.innerText };
     });
 
-    // MONTH: followers start/end + posts
-  document.getElementById('monthCalcBtn').addEventListener('click', function(){
-  const start = +document.getElementById('fStart').value || 0;
-  const end = +document.getElementById('fEnd').value || 0;
-  const posts = +document.getElementById('posts').value || 0;
+    // MONTH: snapshot
+    document.getElementById('monthCalcBtn').addEventListener('click', function(){
+      const start = +document.getElementById('fStart').value || 0;
+      const end = +document.getElementById('fEnd').value || 0;
+      const posts = +document.getElementById('posts').value || 0;
 
-  const out = document.getElementById('monthResult');
-  const tipEl = document.getElementById('monthTip');
+      const out = document.getElementById('monthResult');
+      const tipEl = document.getElementById('monthTip');
 
-  if(!start){
-    out.innerText = "Followers start cannot be zero.";
-    tipEl.innerText = "";
-    monthState = { text: out.innerText, tip:"" };
-    return;
-  }
+      if(!start){
+        out.innerText = "Followers start cannot be zero.";
+        tipEl.innerText = "";
+        monthState = { text: out.innerText, tip:"" };
+        return;
+      }
 
-  const growth = ((end - start) / start) * 100;
-  const perWeek = posts / 4.3;
-  const projected = Math.round(perWeek * 4.3);
+      const growth = ((end - start) / start) * 100;
+      const perWeek = posts / 4.3;
+      const projected = Math.round(perWeek * 4.3);
 
-  out.innerText =
-    "Growth rate: " + growth.toFixed(2) + "%\n" +
-    "Consistency: " + perWeek.toFixed(1) + " posts per week\n" +
-    "Projected next month: ~" + projected + " posts";
+      out.innerText =
+        "Growth rate: " + growth.toFixed(2) + "%\n" +
+        "Consistency: " + perWeek.toFixed(1) + " posts per week\n" +
+        "Projected next month: ~" + projected + " posts";
 
-  // Growth mood
-  let mood;
-  if (growth < 0) mood = pick(tipBanks.monthGrowthDown);
-  else if (growth < 1) mood = pick(tipBanks.monthGrowthFlat);
-  else mood = pick(tipBanks.monthGrowthUp);
+      let mood;
+      if (growth < 0) mood = pick(tipBanks.monthGrowthDown);
+      else if (growth < 1) mood = pick(tipBanks.monthGrowthFlat);
+      else mood = pick(tipBanks.monthGrowthUp);
 
-  // Consistency nudge
-  let nudge;
-  if (posts === 0) nudge = "No posts this month — aim for at least 1 to 2 per week.";
-  else if (perWeek < 2) nudge = pick(tipBanks.monthLowPosts);
-  else if (perWeek < 3) nudge = pick(tipBanks.monthOkPosts);
-  else nudge = pick(tipBanks.monthStrongPosts);
+      let nudge;
+      if (posts === 0) nudge = "No posts this month — aim for at least 1 to 2 per week.";
+      else if (perWeek < 2) nudge = pick(tipBanks.monthLowPosts);
+      else if (perWeek < 3) nudge = pick(tipBanks.monthOkPosts);
+      else nudge = pick(tipBanks.monthStrongPosts);
 
-  const micro = [mood, nudge, streakNudge()];
-  tipEl.innerText = lines(micro.slice(0,3));
+      const micro = [mood, nudge, streakNudge()];
+      tipEl.innerText = lines(micro.slice(0,3));
 
-  monthState = { text: out.innerText, tip: tipEl.innerText };
-});
-
+      monthState = { text: out.innerText, tip: tipEl.innerText };
+    });
 
     // Copy
     function copyOut(which){
@@ -380,68 +323,56 @@ const tipBanks = {
       navigator.clipboard.writeText(text).then(()=>showToast("Copied"));
     }
 
-    // Toast
-    function showToast(msg="Done"){
-      const t=document.getElementById('toast');
-      t.textContent=msg;
-      t.className='show';
-      setTimeout(()=>t.className=t.className.replace('show',''),3000);
-    }
-
     // Branded PDF (both sections) — square logo, pink headings, blue bars
-function downloadPDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+    function downloadPDF(){
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
 
-  // Try to place the square logo (70x70). If it fails, just continue.
-  try {
-    doc.addImage(
-      "https://raw.githubusercontent.com/angela-pounder/first-test-codex/main/Clydeside%20Social%20-%20Logo%20REFRESH_Inline%20-%20B%26P%20-%20White%20DS%20-%20NO%20BG.png",
-      "PNG",
-      70, 10,   // x, y
-      70, 70    // width, height (square so it won't squish)
-    );
-  } catch (e) {}
+      // Logo (square 70×70)
+      try {
+        doc.addImage(
+          "https://raw.githubusercontent.com/angela-pounder/first-test-codex/main/Clydeside%20Social%20-%20Logo%20REFRESH_Inline%20-%20B%26P%20-%20White%20DS%20-%20NO%20BG.png",
+          "PNG",
+          70, 10, 70, 70
+        );
+      } catch (e) {}
 
-  // Title (below the logo)
-  doc.setFont("helvetica","bold");
-  doc.setTextColor(255, 102, 128); // brand pink
-  doc.setFontSize(18);
-  doc.text("Instagram Results Report", 20, 90);
+      // Title
+      doc.setFont("helvetica","bold");
+      doc.setTextColor(255,102,128);
+      doc.setFontSize(18);
+      doc.text("Instagram Results Report", 20, 90);
 
-  // --- Post section ---
-  doc.setFillColor(169, 221, 232); // brand blue
-  doc.rect(20, 98, 170, 10, "F");
-  doc.setTextColor(0,0,0);
-  doc.setFontSize(14);
-  doc.text("Post engagement", 22, 105);
+      // Post section
+      doc.setFillColor(169,221,232);
+      doc.rect(20, 98, 170, 10, "F");
+      doc.setTextColor(0,0,0);
+      doc.setFontSize(14);
+      doc.text("Post engagement", 22, 105);
 
-  const postBlock = [postState?.text, postState?.bench, postState?.tip]
-    .filter(Boolean).join("\n") || "No post data calculated.";
-  doc.setFontSize(12);
-  doc.text(doc.splitTextToSize(postBlock, 170), 22, 118);
+      const postBlock = [postState.text, postState.bench, postState.tip]
+        .filter(Boolean).join("\n") || "No post data calculated.";
+      doc.setFontSize(12);
+      doc.text(doc.splitTextToSize(postBlock, 170), 22, 118);
 
-  // --- Monthly section ---
-  doc.setFillColor(169, 221, 232);
-  doc.rect(20, 160, 170, 10, "F");
-  doc.setFontSize(14);
-  doc.text("Monthly snapshot", 22, 167);
+      // Monthly section
+      doc.setFillColor(169,221,232);
+      doc.rect(20, 160, 170, 10, "F");
+      doc.setFontSize(14);
+      doc.text("Monthly snapshot", 22, 167);
 
-  const monthBlock = [monthState?.text, monthState?.tip]
-    .filter(Boolean).join("\n") || "No monthly data calculated.";
-  doc.setFontSize(12);
-  doc.text(doc.splitTextToSize(monthBlock, 170), 22, 180);
+      const monthBlock = [monthState.text, monthState.tip]
+        .filter(Boolean).join("\n") || "No monthly data calculated.";
+      doc.setFontSize(12);
+      doc.text(doc.splitTextToSize(monthBlock, 170), 22, 180);
 
-  // Footer
-  doc.setFontSize(10);
-  doc.setTextColor(100);
-  doc.text("© Clydeside Social", 20, 285);
+      // Footer + save
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text("© Clydeside Social", 20, 285);
 
-  // Save & toast
-  doc.save("Clydeside_Social_Instagram_Report.pdf");
-  if (typeof showToast === "function") showToast("PDF downloaded");
-}
-
+      doc.save("Clydeside_Social_Instagram_Report.pdf");
+      showToast("PDF downloaded");
     }
   </script>
 </body>
