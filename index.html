@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Instagram Engagement Rate Calculator</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    label { display: block; margin-top: 1rem; }
+    input { margin-left: 0.5rem; }
+    #result { margin-top: 1.5rem; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Instagram Engagement Rate Calculator</h1>
+  <label>
+    Followers:
+    <input type="number" id="followers" min="0" />
+  </label>
+  <label>
+    Likes:
+    <input type="number" id="likes" min="0" />
+  </label>
+  <label>
+    Comments:
+    <input type="number" id="comments" min="0" />
+  </label>
+  <button id="calc-btn">Calculate</button>
+  <div id="result"></div>
+
+  <script>
+    document.getElementById('calc-btn').addEventListener('click', function () {
+      const followers = parseFloat(document.getElementById('followers').value) || 0;
+      const likes = parseFloat(document.getElementById('likes').value) || 0;
+      const comments = parseFloat(document.getElementById('comments').value) || 0;
+      if (followers <= 0) {
+        document.getElementById('result').textContent = 'Followers must be greater than zero.';
+        return;
+      }
+      const engagementRate = ((likes + comments) / followers) * 100;
+      document.getElementById('result').textContent =
+        'Engagement Rate: ' + engagementRate.toFixed(2) + '%';
+    });
+  </script>
+</body>
+</html>
