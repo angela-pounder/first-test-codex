@@ -38,7 +38,7 @@
     h2{font-size:1.2rem; margin:0 0 8px}
     p{margin:.5rem 0}
     label{display:block; margin:.75rem 0 .25rem; font-weight:bold}
-    input{
+    input, select{
       width:100%; padding:.7rem .9rem;
       border:1px solid #ddd; border-radius:16px;
     }
@@ -49,10 +49,12 @@
       color:#fff; font-weight:bold; font-size:1rem;
       box-shadow:0 6px 14px rgba(0,0,0,.12);
     }
+    button:hover{filter:brightness(1.03)}
     #result, #snapshotResult{margin-top:1rem; font-weight:bold; color:var(--pink); white-space:pre-line}
     .muted{font-size:.95rem; opacity:.8; margin-top:.25rem}
     footer{margin-top:12px; font-size:.85rem; opacity:.7; text-align:center}
     .intro{font-size:1rem}
+    .benchmark{font-size:.95rem; opacity:.8; margin-top:.25rem}
   </style>
 </head>
 <body>
@@ -71,6 +73,15 @@
     <!-- Post-level calculator -->
     <div class="card">
       <h2>Post Engagement Rate</h2>
+
+      <label>Post type:</label>
+      <select id="postType">
+        <option value="single">Single image</option>
+        <option value="carousel">Carousel</option>
+        <option value="reel">Reel</option>
+        <option value="video">Video</option>
+      </select>
+
       <label>Followers:</label>
       <input type="number" id="followers" min="0" />
 
@@ -82,6 +93,7 @@
 
       <button id="calc-btn">Calculate</button>
       <div id="result" aria-live="polite"></div>
+      <p id="benchmarkNote" class="benchmark"></p>
       <p id="resultTip" class="muted"></p>
     </div>
 
@@ -106,38 +118,87 @@
   </div>
 
   <script>
-    // POST-LEVEL: engagement with tips
+    // --- Helper: pick a random item
+    function pick(arr){ return arr[Math.floor(Math.random()*arr.length)] }
+
+    // --- POST-LEVEL: engagement with benchmark + smarter randomised tips
     document.getElementById('calc-btn').addEventListener('click', function () {
       const followers = parseFloat(document.getElementById('followers').value) || 0;
       const likes = parseFloat(document.getElementById('likes').value) || 0;
       const comments = parseFloat(document.getElementById('comments').value) || 0;
+      const postType = (document.getElementById('postType').value || 'single').toLowerCase();
 
       const result = document.getElementById('result');
       const tip = document.getElementById('resultTip');
+      const bench = document.getElementById('benchmarkNote');
 
       if (followers === 0) {
         result.innerText = "Followers cannot be zero.";
-        tip.innerText = "";
+        tip.innerText = ""; bench.innerText = "";
         return;
       }
 
       const er = ((likes + comments) / followers) * 100;
       result.innerText = "Engagement Rate: " + er.toFixed(2) + "%";
 
-      let msg = "";
-      if (er < 1) {
-        msg = "On the low side. Try a question in the first line and a clearer CTA.";
-      } else if (er < 3) {
-        msg = "Around typical (1–3%). A carousel or a ‘save this’ tip could nudge it up.";
-      } else if (er < 6) {
-        msg = "Strong result. Repeat the format/topic next week.";
+      // Benchmark note (typical Instagram average ~1–3%)
+      if (er < 1){
+        bench.innerText = "Below the typical 1–3% range.";
+      } else if (er <= 3){
+        bench.innerText = "Around the typical 1–3% range.";
       } else {
-        msg = "Excellent. Bottle this—reuse the hook and posting time.";
+        bench.innerText = "Above the typical 1–3% range — nice!";
       }
-      tip.innerText = msg;
+
+      // Tip banks
+      const generalLow = [
+        "Ask a question in the first line to spark comments.",
+        "Use a clearer call-to-action — tell people what to do next.",
+        "Tighten the topic — one point per post tends to perform better.",
+        "Post at your audience’s peak time and reply to early comments.",
+        "Try a save-worthy tip they’ll want to come back to."
+      ];
+      const suggestFormats = {
+        single: ["Test a carousel this week.", "Try a short Reel to reach fresh eyes."],
+        carousel: ["Try a short Reel with the same topic.", "Repurpose the best slide as a standalone tip."],
+        reel: ["Turn this into a carousel with 5–7 frames.", "Add a follow-up static with a checklist."],
+        video: ["Cut a 15–30s Reel version.", "Turn key moments into a carousel."]
+      };
+      const strongWins = [
+        "Repeat this format and posting time next week.",
+        "Repurpose into another format (carousel ↔ reel) to extend reach.",
+        "Write a follow-up post answering the most common comment.",
+        "Pin this post for a few days to keep momentum."
+      ];
+
+      // Build a context-aware tip list
+      let tips = [];
+      if ( er < 1 ){
+        tips = generalLow.concat(suggestFormats[postType] || []);
+      } else if ( er < 3 ){
+        tips = ["Add a hook in line one.", "Include a ‘save this’ nudge.", "End with a question to invite replies."]
+               .concat(suggestFormats[postType] || []);
+      } else if ( er < 6 ){
+        tips = strongWins.concat(suggestFormats[postType] || []);
+      } else {
+        tips = strongWins.concat([
+          "Create a quick ‘why this worked’ debrief post.",
+          "Boost to warm audiences for a few days to compound results."
+        ]);
+      }
+
+      // Avoid suggesting the exact same format they already used (e.g., “try a carousel” when postType is carousel)
+      tips = tips.filter(t => {
+        if (postType === 'carousel' && /carousel/i.test(t)) return false;
+        if (postType === 'reel' && /reel/i.test(t)) return false;
+        if (postType === 'single' && /static|single image/i.test(t)) return false;
+        return true;
+      });
+
+      tip.innerText = pick(tips);
     });
 
-    // MONTHLY: growth + consistency with tips
+    // --- MONTHLY: growth + consistency + projection + tips
     document.getElementById('snapshot-btn').addEventListener('click', function () {
       const start = parseFloat(document.getElementById('followersStart').value) || 0;
       const end = parseFloat(document.getElementById('followersEnd').value) || 0;
@@ -154,18 +215,22 @@
 
       const growth = ((end - start) / start) * 100;
       const perWeek = posts / 4.3;
+      const projectedNextMonth = Math.round(perWeek * 4.3);
 
       out.innerText =
         "Growth Rate: " + growth.toFixed(2) + "%\n" +
-        "Consistency: " + perWeek.toFixed(1) + " posts per week";
+        "Consistency: " + perWeek.toFixed(1) + " posts per week\n" +
+        "Projected next month at this pace: ~" + projectedNextMonth + " posts";
 
       let notes = [];
 
+      // Growth guidance
       if (growth < 0) notes.push("Followers dipped — re-engage warm audiences and share more saves-worthy content.");
       else if (growth < 1) notes.push("Flat growth — try one extra weekly post or a collab.");
       else if (growth < 3) notes.push("Nice steady growth.");
       else notes.push("Strong growth — keep this pace and topics.");
 
+      // Consistency guidance (with positive reinforcement)
       if (perWeek < 2) {
         notes.push("Consistency is low. Aim for ~3 posts/week.");
       } else if (perWeek < 3) {
@@ -179,3 +244,4 @@
   </script>
 </body>
 </html>
+
