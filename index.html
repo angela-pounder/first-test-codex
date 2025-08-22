@@ -22,226 +22,241 @@
       display:flex; justify-content:center;
     }
     .wrap{max-width:720px; width:100%}
-    .logo{
-      max-width:180px;
-      margin:0 auto 20px;
-      display:block;
-    }
+    .logo{max-width:180px;margin:0 auto 20px;display:block}
     .card{
-      background:var(--card);
-      border-radius:var(--radius);
-      padding:24px;
-      box-shadow:var(--shadow);
-      margin-bottom:20px;
+      background:var(--card); border-radius:var(--radius);
+      padding:24px; box-shadow:var(--shadow); margin-bottom:20px;
     }
     h1{font-size:1.6rem; margin:0 0 12px; color:var(--pink)}
     h2{font-size:1.2rem; margin:0 0 8px}
-    p{margin:.5rem 0}
     label{display:block; margin:.75rem 0 .25rem; font-weight:bold}
     input, select{
-      width:100%; padding:.7rem .9rem;
-      border:1px solid #ddd; border-radius:16px;
+      width:100%; padding:.7rem .9rem; border:1px solid #ddd; border-radius:16px;
     }
     button{
-      margin-top:1rem; padding:.8rem 1.1rem;
-      border:0; border-radius:999px; cursor:pointer;
+      margin-top:1rem; padding:.7rem 1rem; border:0; border-radius:999px; cursor:pointer;
       background:linear-gradient(135deg,var(--pink),var(--blue));
-      color:#fff; font-weight:bold; font-size:1rem;
+      color:#fff; font-weight:bold; font-size:.95rem;
       box-shadow:0 6px 14px rgba(0,0,0,.12);
     }
-    button:hover{filter:brightness(1.03)}
-    #result, #snapshotResult{margin-top:1rem; font-weight:bold; color:var(--pink); white-space:pre-line}
-    .muted{font-size:.95rem; opacity:.8; margin-top:.25rem}
+    button:hover{filter:brightness(1.05)}
+    .actions{margin-top:10px; display:flex; gap:8px; flex-wrap:wrap}
+    #postResult,#monthResult{margin-top:1rem; font-weight:bold; color:var(--pink); white-space:pre-line}
+    .muted,.benchmark{font-size:.9rem; opacity:.8; margin-top:.25rem; white-space:pre-line}
     footer{margin-top:12px; font-size:.85rem; opacity:.7; text-align:center}
     .intro{font-size:1rem}
-    .benchmark{font-size:.95rem; opacity:.8; margin-top:.25rem}
+    .divider{height:1px;background:#eee;margin:14px 0}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <!-- LOGO -->
-    <img src="https://raw.githubusercontent.com/angela-pounder/first-test-codex/main/Clydeside%20Social%20-%20Logo%20REFRESH_Inline%20-%20B%26P%20-%20White%20DS%20-%20NO%20BG.png" alt="Clydeside Social logo" class="logo">
+<div class="wrap">
+  <!-- LOGO -->
+  <img src="https://raw.githubusercontent.com/angela-pounder/first-test-codex/main/Clydeside%20Social%20-%20Logo%20REFRESH_Inline%20-%20B%26P%20-%20White%20DS%20-%20NO%20BG.png" alt="Clydeside Social logo" class="logo">
 
-    <div class="card">
-      <h1>Instagram Engagement Toolkit</h1>
-      <p class="intro">
-        Pop in your numbers for a single post, then get a quick monthly snapshot.
-        I’ll give you friendly tips based on your results. Nothing is saved—your data stays in your browser.
-      </p>
-    </div>
-
-    <!-- Post-level calculator -->
-    <div class="card">
-      <h2>Post Engagement Rate</h2>
-
-      <label>Post type:</label>
-      <select id="postType">
-        <option value="single">Single image</option>
-        <option value="carousel">Carousel</option>
-        <option value="reel">Reel</option>
-        <option value="video">Video</option>
-      </select>
-
-      <label>Followers:</label>
-      <input type="number" id="followers" min="0" />
-
-      <label>Likes:</label>
-      <input type="number" id="likes" min="0" />
-
-      <label>Comments:</label>
-      <input type="number" id="comments" min="0" />
-
-      <button id="calc-btn">Calculate</button>
-      <div id="result" aria-live="polite"></div>
-      <p id="benchmarkNote" class="benchmark"></p>
-      <p id="resultTip" class="muted"></p>
-    </div>
-
-    <!-- Monthly snapshot -->
-    <div class="card">
-      <h2>Monthly Snapshot</h2>
-      <label>Followers at start of month:</label>
-      <input type="number" id="followersStart" min="0" />
-
-      <label>Followers at end of month:</label>
-      <input type="number" id="followersEnd" min="0" />
-
-      <label>Posts published this month:</label>
-      <input type="number" id="posts" min="0" />
-
-      <button id="snapshot-btn">Calculate Snapshot</button>
-      <div id="snapshotResult" aria-live="polite"></div>
-      <p id="snapshotTip" class="muted"></p>
-    </div>
-
-    <footer>© Clydeside Social • Built with Codex</footer>
+  <div class="card">
+    <h1>Instagram Engagement Toolkit</h1>
+    <p class="intro">
+      Pop in your numbers for a single post, then get a quick monthly snapshot.
+      I’ll give you friendly tips based on your results. Nothing is saved - your data stays in your browser.
+    </p>
   </div>
 
-  <script>
-    // --- Helper: pick a random item
-    function pick(arr){ return arr[Math.floor(Math.random()*arr.length)] }
+  <!-- Post calculator -->
+  <div class="card" id="postCard">
+    <h2>Post Engagement Rate</h2>
+    <label>Post type:</label>
+    <select id="postType">
+      <option value="single">Single image</option>
+      <option value="carousel">Carousel</option>
+      <option value="reel">Reel</option>
+      <option value="video">Video</option>
+    </select>
 
-    // --- POST-LEVEL: engagement with benchmark + smarter randomised tips
-    document.getElementById('calc-btn').addEventListener('click', function () {
-      const followers = parseFloat(document.getElementById('followers').value) || 0;
-      const likes = parseFloat(document.getElementById('likes').value) || 0;
-      const comments = parseFloat(document.getElementById('comments').value) || 0;
-      const postType = (document.getElementById('postType').value || 'single').toLowerCase();
+    <label>Followers:</label>
+    <input type="number" id="followers" min="0"/>
+    <label>Likes:</label>
+    <input type="number" id="likes" min="0"/>
+    <label>Comments:</label>
+    <input type="number" id="comments" min="0"/>
 
-      const result = document.getElementById('result');
-      const tip = document.getElementById('resultTip');
-      const bench = document.getElementById('benchmarkNote');
+    <button id="postCalcBtn">Calculate</button>
+    <div id="postResult" aria-live="polite"></div>
+    <p id="postBenchmark" class="benchmark"></p>
+    <p id="postTip" class="muted"></p>
+    <div class="actions">
+      <button type="button" onclick="copyText('post')">Copy results</button>
+    </div>
+  </div>
 
-      if (followers === 0) {
-        result.innerText = "Followers cannot be zero.";
-        tip.innerText = ""; bench.innerText = "";
-        return;
-      }
+  <!-- Monthly snapshot -->
+  <div class="card" id="monthCard">
+    <h2>Monthly Snapshot</h2>
+    <label>Followers at start of month:</label>
+    <input type="number" id="followersStart" min="0"/>
+    <label>Followers at end of month:</label>
+    <input type="number" id="followersEnd" min="0"/>
+    <label>Posts published this month:</label>
+    <input type="number" id="posts" min="0"/>
 
-      const er = ((likes + comments) / followers) * 100;
-      result.innerText = "Engagement Rate: " + er.toFixed(2) + "%";
+    <button id="monthCalcBtn">Calculate snapshot</button>
+    <div id="monthResult" aria-live="polite"></div>
+    <p id="monthTip" class="muted"></p>
+    <div class="actions">
+      <button type="button" onclick="copyText('month')">Copy results</button>
+      <button type="button" onclick="downloadPDFCombined()">Download combined PDF</button>
+    </div>
+  </div>
 
-      // Benchmark note (typical Instagram average ~1–3%)
-      if (er < 1){
-        bench.innerText = "Below the typical 1–3% range.";
-      } else if (er <= 3){
-        bench.innerText = "Around the typical 1–3% range.";
-      } else {
-        bench.innerText = "Above the typical 1–3% range — nice!";
-      }
+  <footer>© Clydeside Social • Built with Codex</footer>
+</div>
 
-      // Tip banks
-      const generalLow = [
-        "Ask a question in the first line to spark comments.",
-        "Use a clearer call-to-action — tell people what to do next.",
-        "Tighten the topic — one point per post tends to perform better.",
-        "Post at your audience’s peak time and reply to early comments.",
-        "Try a save-worthy tip they’ll want to come back to."
-      ];
-      const suggestFormats = {
-        single: ["Test a carousel this week.", "Try a short Reel to reach fresh eyes."],
-        carousel: ["Try a short Reel with the same topic.", "Repurpose the best slide as a standalone tip."],
-        reel: ["Turn this into a carousel with 5–7 frames.", "Add a follow-up static with a checklist."],
-        video: ["Cut a 15–30s Reel version.", "Turn key moments into a carousel."]
-      };
-      const strongWins = [
-        "Repeat this format and posting time next week.",
-        "Repurpose into another format (carousel ↔ reel) to extend reach.",
-        "Write a follow-up post answering the most common comment.",
-        "Pin this post for a few days to keep momentum."
-      ];
+<!-- jsPDF for PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+  // Simple picker
+  const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 
-      // Build a context-aware tip list
-      let tips = [];
-      if ( er < 1 ){
-        tips = generalLow.concat(suggestFormats[postType] || []);
-      } else if ( er < 3 ){
-        tips = ["Add a hook in line one.", "Include a ‘save this’ nudge.", "End with a question to invite replies."]
-               .concat(suggestFormats[postType] || []);
-      } else if ( er < 6 ){
-        tips = strongWins.concat(suggestFormats[postType] || []);
-      } else {
-        tips = strongWins.concat([
-          "Create a quick ‘why this worked’ debrief post.",
-          "Boost to warm audiences for a few days to compound results."
-        ]);
-      }
+  // Tip banks in simple language (your tweak included)
+  const tips = {
+    low: [
+      "Don’t worry if this one fell a bit flat - try again with a different image or photo",
+      "Ask a question at the end of your caption so people reply",
+      "Share a quick tip as a carousel so people save it",
+      "Post at a time you know your followers are online",
+      "Use a Reel with a trending sound to reach new people"
+    ],
+    medium: [
+      "This is fine - now try making the hook in your caption stronger",
+      "Add a poll or quiz in Stories to get more people talking",
+      "Try posting a Reel and a carousel on the same topic",
+      "Share a tip that starts with Save this for later",
+      "Keep posting 2 to 3 times a week so you stay consistent"
+    ],
+    high: [
+      "Well done - this one worked, do more like it",
+      "Pin this post to the top of your profile for extra views",
+      "Repurpose it into another format, like a Reel or carousel",
+      "Post a follow up answering comments or questions",
+      "Turn it into a tip series so people come back for more"
+    ]
+  };
 
-      // Avoid suggesting the exact same format they already used (e.g., “try a carousel” when postType is carousel)
-      tips = tips.filter(t => {
-        if (postType === 'carousel' && /carousel/i.test(t)) return false;
-        if (postType === 'reel' && /reel/i.test(t)) return false;
-        if (postType === 'single' && /static|single image/i.test(t)) return false;
-        return true;
-      });
+  // State to reuse in PDF
+  let postState = { text:"", bench:"", tip:"" };
+  let monthState = { text:"", tip:"" };
 
-      tip.innerText = pick(tips);
+  // POST: calc + tip + benchmark
+  document.getElementById('postCalcBtn').addEventListener('click', function(){
+    const followers = +document.getElementById('followers').value || 0;
+    const likes = +document.getElementById('likes').value || 0;
+    const comments = +document.getElementById('comments').value || 0;
+    const postType = (document.getElementById('postType').value||'single').toLowerCase();
+
+    const out = document.getElementById('postResult');
+    const bench = document.getElementById('postBenchmark');
+    const tipEl = document.getElementById('postTip');
+
+    if(!followers){
+      out.innerText = "Please enter follower count.";
+      bench.innerText = ""; tipEl.innerText = "";
+      postState = { text: out.innerText, bench:"", tip:"" };
+      return;
+    }
+
+    const er = ((likes+comments)/followers)*100;
+    out.innerText = "Engagement rate: " + er.toFixed(2) + "%";
+
+    if (er < 1) bench.innerText = "Below the typical 1-3% range.";
+    else if (er <= 3) bench.innerText = "Around the typical 1-3% range.";
+    else bench.innerText = "Above the typical 1-3% range - nice!";
+
+    // Build smart tips and avoid suggesting same format they used
+    const formats = {
+      single: ["Test a carousel this week.", "Try a short Reel."],
+      carousel: ["Try a short Reel with the same topic.", "Repurpose the best slide as a standalone tip."],
+      reel: ["Turn this into a carousel with 5 to 7 slides.", "Add a checklist as a static post."],
+      video: ["Cut a 15 to 30s Reel.", "Turn key moments into a carousel."]
+    };
+
+    let pool = [];
+    if (er < 1) pool = tips.low.concat(formats[postType]||[]);
+    else if (er < 3) pool = tips.medium.concat(formats[postType]||[]);
+    else pool = tips.high.concat(formats[postType]||[]);
+
+    // filter out suggesting the same format they already used
+    pool = pool.filter(t=>{
+      if (postType==='carousel' && /carousel/i.test(t)) return false;
+      if (postType==='reel' && /reel/i.test(t)) return false;
+      if (postType==='single' && /single|static/i.test(t)) return false;
+      return true;
     });
 
-    // --- MONTHLY: growth + consistency + projection + tips
-    document.getElementById('snapshot-btn').addEventListener('click', function () {
-      const start = parseFloat(document.getElementById('followersStart').value) || 0;
-      const end = parseFloat(document.getElementById('followersEnd').value) || 0;
-      const posts = parseFloat(document.getElementById('posts').value) || 0;
+    const tip = pick(pool);
+    tipEl.innerText = tip;
 
-      const out = document.getElementById('snapshotResult');
-      const tip = document.getElementById('snapshotTip');
+    postState = { text: out.innerText, bench: bench.innerText, tip };
+  });
 
-      if (start === 0) {
-        out.innerText = "Followers start cannot be zero.";
-        tip.innerText = "";
-        return;
-      }
+  // MONTH: calc + tips
+  document.getElementById('monthCalcBtn').addEventListener('click', function(){
+    const start = +document.getElementById('followersStart').value || 0;
+    const end = +document.getElementById('followersEnd').value || 0;
+    const posts = +document.getElementById('posts').value || 0;
 
-      const growth = ((end - start) / start) * 100;
-      const perWeek = posts / 4.3;
-      const projectedNextMonth = Math.round(perWeek * 4.3);
+    const out = document.getElementById('monthResult');
+    const tipEl = document.getElementById('monthTip');
 
-      out.innerText =
-        "Growth Rate: " + growth.toFixed(2) + "%\n" +
-        "Consistency: " + perWeek.toFixed(1) + " posts per week\n" +
-        "Projected next month at this pace: ~" + projectedNextMonth + " posts";
+    if(!start){
+      out.innerText = "Followers start cannot be zero.";
+      tipEl.innerText = "";
+      monthState = { text: out.innerText, tip:"" };
+      return;
+    }
 
-      let notes = [];
+    const growth = ((end-start)/start)*100;
+    const perWeek = posts/4.3;
+    const projected = Math.round(perWeek*4.3);
 
-      // Growth guidance
-      if (growth < 0) notes.push("Followers dipped — re-engage warm audiences and share more saves-worthy content.");
-      else if (growth < 1) notes.push("Flat growth — try one extra weekly post or a collab.");
-      else if (growth < 3) notes.push("Nice steady growth.");
-      else notes.push("Strong growth — keep this pace and topics.");
+    out.innerText =
+      "Growth rate: " + growth.toFixed(2) + "%\n" +
+      "Consistency: " + perWeek.toFixed(1) + " posts per week\n" +
+      "Projected next month: ~" + projected + " posts";
 
-      // Consistency guidance (with positive reinforcement)
-      if (perWeek < 2) {
-        notes.push("Consistency is low. Aim for ~3 posts/week.");
-      } else if (perWeek < 3) {
-        notes.push("Nearly there — try scheduling one more post.");
-      } else {
-        notes.push("Consistency on point — nice work. While you’re here, schedule next month now (carousels + a Reel each week).");
-      }
+    let notes = [];
+    if (growth < 0) notes.push("Followers dipped - re engage warm audiences.");
+    else if (growth < 1) notes.push("Flat growth - try one extra weekly post or a collab.");
+    else if (growth < 3) notes.push("Nice steady growth.");
+    else notes.push("Strong growth - keep it up.");
 
-      tip.innerText = notes.join(" ");
-    });
-  </script>
-</body>
-</html>
+    if (perWeek < 2) notes.push("Consistency is low. Aim for about 3 posts per week.");
+    else if (perWeek < 3) notes.push("Nearly there - try scheduling one more post.");
+    else notes.push("Consistency on point - schedule next month now.");
+
+    const tip = notes.join(" ");
+    tipEl.innerText = tip;
+
+    monthState = { text: out.innerText, tip };
+  });
+
+  // Copy helpers
+  function copyText(which){
+    const text = which==='post'
+      ? [postState.text, postState.bench, postState.tip].filter(Boolean).join("\n")
+      : [monthState.text, monthState.tip].filter(Boolean).join("\n");
+    navigator.clipboard.writeText(text).then(()=>alert("Results copied"));
+  }
+
+  // Combined PDF: logo + pink headings + both sections + footer
+  async function downloadPDFCombined(){
+    // If user forgot to calculate, trigger both
+    if(!postState.text) document.getElementById('postCalcBtn').click();
+    if(!monthState.text) document.getElementById('monthCalcBtn').click();
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // try to load logo; if it fails, continue without
+    const addReport = () => {
+      // Header
+      doc.setFont("helvetica","bold
 
